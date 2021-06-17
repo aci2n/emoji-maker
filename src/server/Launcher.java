@@ -1,5 +1,6 @@
 package server;
 
+import handler.EmojiHandler;
 import handler.HealthHandler;
 
 import java.util.logging.Logger;
@@ -13,6 +14,7 @@ public record Launcher() {
 			LightServer server = LightServer.create(14000);
 
 			server.addHandler("/health", new HealthHandler());
+			server.addHandler("/emoji", new EmojiHandler());
 
 			server.start();
 			Runtime.getRuntime().addShutdownHook(new Thread(server::stop));

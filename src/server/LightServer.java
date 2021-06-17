@@ -8,6 +8,7 @@ import com.sun.net.httpserver.HttpServer;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.nio.charset.StandardCharsets;
 import java.util.concurrent.Executors;
 import java.util.logging.Logger;
 
@@ -36,15 +37,34 @@ public record LightServer(HttpServer httpServer) {
 
 	private record HandlerWrapper(HttpHandler handler) implements HttpHandler {
 		public void handle(HttpExchange exchange) throws IOException {
-			LOG.fine(() -> {
-				HttpContext context = exchange.getHttpContext();
-				return String.format("got request: [path=%s,remote_host:%s]", context.getPath(), exchange.getRemoteAddress().getHostString());
-			});
-			Headers headers = exchange.getResponseHeaders();
-			headers.add("Server", "LightServer");
-			headers.add("Content-Type", "text/plain;charset=UTF-8");
-			handler.handle(exchange);
-			exchange.close();
+			try {
+				LOG.fine(() -> {
+					HttpContext context = exchange.getHttpContext();
+					return String.format(
+							"got request: [path=%s,remote_host:%s]",
+							context.getPath(),
+							exchange.getRemoteAddress().getHostString());
+				});
+				Headers headers = exchange.getResponseHeaders();
+				headers.add("Server", "LightServer");
+				headers.add("Content-Type", "text/plain;charset=UTF-8");
+				handler.handle(exchange);
+			} catch (Throwable t) {
+			    LOG.severe(() -> {
+					HttpContext context = exchange.getHttpContext();
+					return String.format(
+							"error: %s [path=%s,remote_host:%s]",
+							t.getMessage(),
+							context.getPath(),
+							exchange.getRemoteAddress().getHostString());
+				});
+			    byte[] message = t.getMessage().getBytes(StandardCharsets.UTF_8);
+			    exchange.sendResponseHeaders(500, message.length);
+			    exchange.getResponseBody().write(message);
+			    throw t;
+			} finally {
+				exchange.close();
+			}
 		}
 	}
 }
