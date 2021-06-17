@@ -7,6 +7,7 @@ import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
 
 import java.io.IOException;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.Executors;
@@ -18,7 +19,7 @@ public record LightServer(HttpServer httpServer) {
 	private static final int THREAD_POOL_SIZE = 10;
 
 	public static LightServer create(int port) throws IOException {
-		InetSocketAddress address = new InetSocketAddress("127.0.0.1", port);
+		InetSocketAddress address = new InetSocketAddress("0.0.0.0", port);
 		return new LightServer(HttpServer.create(address, 0));
 	}
 
@@ -38,7 +39,7 @@ public record LightServer(HttpServer httpServer) {
 	private record HandlerWrapper(HttpHandler handler) implements HttpHandler {
 		public void handle(HttpExchange exchange) throws IOException {
 			try {
-				LOG.fine(() -> {
+				LOG.info(() -> {
 					HttpContext context = exchange.getHttpContext();
 					return String.format(
 							"got request: [path=%s,remote_host:%s]",

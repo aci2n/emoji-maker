@@ -3,13 +3,16 @@ package handler;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 
-import javax.swing.text.IconView;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Arrays;
+import java.util.logging.Logger;
 
 public record EmojiHandler() implements HttpHandler {
+    private static final Logger LOG = Logger.getLogger(EmojiHandler.class.getName());
+
     @Override
     public void handle(HttpExchange exchange) throws IOException {
         File tgs = writeTgs(exchange.getRequestBody());
@@ -17,27 +20,31 @@ public record EmojiHandler() implements HttpHandler {
         File optimized = optimizeGif(gif);
         long contentLength = optimized.length();
         exchange.sendResponseHeaders(200, contentLength);
-        pipe(new FileInputStream(optimized), exchange.getResponseBody());
+        new FileInputStream(optimized).transferTo(exchange.getResponseBody());
     }
 
     private File writeTgs(InputStream input) throws IOException {
-        File stickerFile = Files.createTempFile("sticker", ".tgs").toFile();
-        stickerFile.deleteOnExit();
-        pipe(input, new FileOutputStream(stickerFile));
-        return stickerFile;
+        File tgs = Files.createTempFile("sticker", ".tgs").toFile();
+        tgs.deleteOnExit();
+        input.transferTo(new FileOutputStream(tgs));
+        LOG.info(() -> String.format("wrote tgs: %s (%d bytes)", tgs, tgs.length()));
+        return tgs;
     }
 
     private File convertToGif(File tgs) throws IOException {
         String[] tgsToGifCmd = new String[]{"node", "./deps/tgs-to-gif/cli.js", tgs.toString()};
-        run(tgsToGifCmd, new String[]{"USE_SANDBOX=false"});
-        File gifFile = Path.of(tgs.getPath() + ".gif").toFile();
-        gifFile.deleteOnExit();
-        return gifFile;
+        exec(tgsToGifCmd, new String[]{"USE_SANDBOX=false"});
+        File gif = Path.of(tgs.getPath() + ".gif").toFile();
+        gif.deleteOnExit();
+        LOG.info(() -> String.format("converted to gif: %s (%d bytes)", gif, gif.length()));
+        return gif;
     }
 
     private File optimizeGif(File gif) throws IOException {
         int fps = 24;
         while (fps >= 10) {
+            int f = fps;
+            LOG.info(() -> String.format("optimizing %s with %d fps", gif, f));
             File optimized = optimizeGif(gif, fps);
             if (optimized.length() > 1024 * 256) {
                 fps -= 2;
@@ -61,26 +68,22 @@ public record EmojiHandler() implements HttpHandler {
                 "-y",
                 optimizedGifPath.toString()
         };
-        run(ffmpegCommand, null);
+        exec(ffmpegCommand, null);
         File optimized = optimizedGifPath.toFile();
         optimized.deleteOnExit();
         return optimized;
     }
 
-    private void pipe(InputStream in, OutputStream out) throws IOException {
-        byte[] buffer = new byte[4096];
-        int n;
-        while ((n = in.read(buffer)) > 0) {
-            out.write(buffer, 0, n);
-        }
-    }
-
-    private void run(String[] cmd, String[] env) throws IOException {
+    private void exec(String[] cmd, String[] env) throws IOException {
+        LOG.info(() -> String.format("running cmd %s (env: %s)", Arrays.toString(cmd), Arrays.toString(env)));
         Process proc = Runtime.getRuntime().exec(cmd, env);
         try {
-            if (proc.waitFor() != 0) {
-                String message = new String(proc.getErrorStream().readAllBytes(), StandardCharsets.UTF_8);
-                throw new RuntimeException(message);
+            int result = proc.waitFor();
+            String stdout = new String(proc.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
+            String stderr = new String(proc.getErrorStream().readAllBytes(), StandardCharsets.UTF_8);
+            LOG.info(() -> String.format("[stdout:%s,stderr:%s]", stdout, stderr));
+            if (result != 0) {
+                throw new RuntimeException(stderr);
             }
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
