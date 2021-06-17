@@ -19,6 +19,7 @@ public record EmojiHandler() implements HttpHandler {
         File gif = convertToGif(tgs);
         File optimized = optimizeGif(gif);
         long contentLength = optimized.length();
+        exchange.getResponseHeaders().set("Content-Type", "image/gif");
         exchange.sendResponseHeaders(200, contentLength);
         new FileInputStream(optimized).transferTo(exchange.getResponseBody());
     }
@@ -35,6 +36,9 @@ public record EmojiHandler() implements HttpHandler {
         String[] tgsToGifCmd = new String[]{"node", "./deps/tgs-to-gif/cli.js", tgs.toString()};
         exec(tgsToGifCmd, new String[]{"USE_SANDBOX=false"});
         File gif = Path.of(tgs.getPath() + ".gif").toFile();
+        if (!gif.exists()) {
+            throw new RuntimeException(String.format("could not create file %s", gif));
+        }
         gif.deleteOnExit();
         LOG.info(() -> String.format("converted to gif: %s (%d bytes)", gif, gif.length()));
         return gif;

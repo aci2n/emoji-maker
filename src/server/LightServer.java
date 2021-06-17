@@ -15,7 +15,7 @@ import java.util.logging.Logger;
 
 public record LightServer(HttpServer httpServer) {
 	private static final Logger LOG = Logger.getLogger(LightServer.class.getName());
-	private static final int SHUTDOWN_DELAY_SECONDS = 60;
+	private static final int SHUTDOWN_DELAY_SECONDS = 0;
 	private static final int THREAD_POOL_SIZE = 10;
 
 	public static LightServer create(int port) throws IOException {

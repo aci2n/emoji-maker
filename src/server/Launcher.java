@@ -2,6 +2,7 @@ package server;
 
 import handler.EmojiHandler;
 import handler.HealthHandler;
+import handler.UploadHandler;
 
 import java.util.logging.Logger;
 
@@ -15,6 +16,7 @@ public record Launcher() {
 
 			server.addHandler("/health", new HealthHandler());
 			server.addHandler("/emoji", new EmojiHandler());
+			server.addHandler("/upload", new UploadHandler());
 
 			server.start();
 			Runtime.getRuntime().addShutdownHook(new Thread(server::stop));

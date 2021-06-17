@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Upload Sticker</title>
+
+    <script>
+        function init() {
+            const fileInput = document.querySelector('#file');
+            fileInput.addEventListener('change', event => handleUpload(event));
+        }
+
+        function handleUpload(event) {
+            const file = event.target.files[0];
+            const reader = new FileReader();
+            reader.addEventListener('loadend', e => {
+                postImage(new Blob([e.target.result], {type: 'application/octet-stream'}));
+            });
+            reader.readAsArrayBuffer(file);
+        }
+
+        function postImage(blob) {
+            const result = document.querySelector('#result');
+            result.textContent = 'Processing...';
+            fetch('emoji', {
+                method: 'POST',
+                body: blob
+            })
+            .then(response => response.blob())
+            .then(blob => {
+                result.href = URL.createObjectURL(blob);
+                result.textContent = 'Click here to download!';
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', () => init());
+    </script>
+</head>
+<body>
+    <input id="file" type="file" accept=".tgs"/>
+    <a id="result" target="_gif">Upload a .tgs file</a>
+</body>
+</html>
