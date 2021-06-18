@@ -6,7 +6,7 @@ import server.LightResponse;
 
 public record UploadHandler() implements LightHandler {
     @Override
-    public LightResponse handle(HttpExchange exchange) {
+    public LightResponse get(HttpExchange exchange) {
         return LightResponse.builder()
                 .statusCode(200)
                 .result(getClass().getResourceAsStream("upload.html"))

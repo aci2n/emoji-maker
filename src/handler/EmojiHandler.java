@@ -16,7 +16,7 @@ public record EmojiHandler() implements LightHandler {
     private static final Logger LOG = Logger.getLogger(EmojiHandler.class.getName());
 
     @Override
-    public LightResponse handle(HttpExchange exchange) {
+    public LightResponse post(HttpExchange exchange) {
         try {
             File tgs = writeTgs(exchange.getRequestBody());
             File gif = convertToGif(tgs);

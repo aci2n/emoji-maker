@@ -34,7 +34,14 @@ public record LightServer(HttpServer httpServer, Executor executor) {
 
 	private LightResponse handle(HttpExchange exchange, LightHandler handler) {
 		try {
-			return handler.handle(exchange);
+		    return switch (exchange.getRequestMethod()) {
+				case "GET" -> handler.get(exchange);
+				case "POST" -> handler.post(exchange);
+				case "DELETE" -> handler.delete(exchange);
+				case "PATCH" -> handler.patch(exchange);
+				case "HEAD" -> handler.head(exchange);
+				default -> LightResponse.of(400, "No method%n");
+			};
 		} catch (LightException e) {
 			return LightResponse.of(e.getStatusCode(), e);
 		} catch (Throwable t) {
