@@ -1,16 +1,12 @@
 package handler;
 
 import com.sun.net.httpserver.HttpExchange;
-import com.sun.net.httpserver.HttpHandler;
+import server.LightHandler;
+import server.LightResponse;
 
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-
-public record HealthHandler() implements HttpHandler {
+public record HealthHandler() implements LightHandler {
 	@Override
-	public void handle(HttpExchange exchange) throws IOException {
-		byte[] response = String.format("OK!%n").getBytes(StandardCharsets.UTF_8);
-		exchange.sendResponseHeaders(200, response.length);
-		exchange.getResponseBody().write(response);
+	public LightResponse handle(HttpExchange exchange) {
+	    return LightResponse.of(200, "OK!%n");
 	}
 }

@@ -1,7 +1,9 @@
 package handler;
 
 import com.sun.net.httpserver.HttpExchange;
-import com.sun.net.httpserver.HttpHandler;
+import server.LightException;
+import server.LightHandler;
+import server.LightResponse;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
@@ -10,18 +12,25 @@ import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.logging.Logger;
 
-public record EmojiHandler() implements HttpHandler {
+public record EmojiHandler() implements LightHandler {
     private static final Logger LOG = Logger.getLogger(EmojiHandler.class.getName());
 
     @Override
-    public void handle(HttpExchange exchange) throws IOException {
-        File tgs = writeTgs(exchange.getRequestBody());
-        File gif = convertToGif(tgs);
-        File optimized = optimizeGif(gif);
-        long contentLength = optimized.length();
-        exchange.getResponseHeaders().set("Content-Type", "image/gif");
-        exchange.sendResponseHeaders(200, contentLength);
-        new FileInputStream(optimized).transferTo(exchange.getResponseBody());
+    public LightResponse handle(HttpExchange exchange) {
+        try {
+            File tgs = writeTgs(exchange.getRequestBody());
+            File gif = convertToGif(tgs);
+            File optimized = optimizeGif(gif);
+            long contentLength = optimized.length();
+            return LightResponse.builder()
+                    .statusCode(200)
+                    .contentLength(contentLength)
+                    .result(new FileInputStream(optimized))
+                    .header("Content-Type", "image/gif")
+                    .build();
+        } catch (IOException e) {
+            throw LightException.internalServerError(e);
+        }
     }
 
     private File writeTgs(InputStream input) throws IOException {
@@ -36,8 +45,8 @@ public record EmojiHandler() implements HttpHandler {
         String[] tgsToGifCmd = new String[]{"node", "./deps/tgs-to-gif/cli.js", tgs.toString()};
         exec(tgsToGifCmd, new String[]{"USE_SANDBOX=false"});
         File gif = Path.of(tgs.getPath() + ".gif").toFile();
-        if (!gif.exists()) {
-            throw new RuntimeException(String.format("could not create file %s", gif));
+        if (gif.length() < 10) {
+            throw LightException.badRequest(String.format("could not create file %s%n", gif));
         }
         gif.deleteOnExit();
         LOG.info(() -> String.format("converted to gif: %s (%d bytes)", gif, gif.length()));
@@ -56,7 +65,7 @@ public record EmojiHandler() implements HttpHandler {
                 return optimized;
             }
         }
-        throw new RuntimeException("cannot optimize gif, too chunky");
+        throw LightException.badRequest("cannot optimize gif, too chunky%n");
     }
 
     private File optimizeGif(File gif, int fps) throws IOException {
@@ -87,11 +96,11 @@ public record EmojiHandler() implements HttpHandler {
             String stderr = new String(proc.getErrorStream().readAllBytes(), StandardCharsets.UTF_8);
             LOG.info(() -> String.format("[stdout:%s,stderr:%s]", stdout, stderr));
             if (result != 0) {
-                throw new RuntimeException(stderr);
+                throw LightException.internalServerError(stderr);
             }
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            throw new RuntimeException(e);
+            throw LightException.internalServerError(e);
         }
     }
 }
