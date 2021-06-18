@@ -9,7 +9,7 @@ public record UploadHandler() implements LightHandler {
     public LightResponse get(HttpExchange exchange) {
         return LightResponse.builder()
                 .statusCode(200)
-                .result(getClass().getResourceAsStream("upload.html"))
+                .result(getClass().getResourceAsStream("/resources/upload.html"))
                 .header("Content-Type", "text/html")
                 .build();
     }

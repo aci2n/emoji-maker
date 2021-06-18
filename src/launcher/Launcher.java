@@ -13,7 +13,9 @@ public record Launcher() {
 	public static void main(String[] args) {
 		try {
 			LOG.info("initializing");
-			LightServer server = LightServer.create(14000, Runtime.getRuntime().availableProcessors());
+			LightServer server = LightServer.create(
+					args.length >= 1 ? Integer.parseInt(args[0]) : 14000,
+					Runtime.getRuntime().availableProcessors());
 
 			server.addHandler("/health", new HealthHandler());
 			server.addHandler("/emoji", new EmojiHandler());

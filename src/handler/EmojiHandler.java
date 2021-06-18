@@ -43,7 +43,7 @@ public record EmojiHandler() implements LightHandler {
 
     private File convertToGif(File tgs) throws IOException {
         String[] tgsToGifCmd = new String[]{"node", "./deps/tgs-to-gif/cli.js", tgs.toString()};
-        exec(tgsToGifCmd, new String[]{"USE_SANDBOX=false"});
+        exec(tgsToGifCmd);
         File gif = Path.of(tgs.getPath() + ".gif").toFile();
         if (gif.length() < 10) {
             throw LightException.badRequest(String.format("could not create file %s%n", gif));
@@ -81,15 +81,15 @@ public record EmojiHandler() implements LightHandler {
                 "-y",
                 optimizedGifPath.toString()
         };
-        exec(ffmpegCommand, null);
+        exec(ffmpegCommand);
         File optimized = optimizedGifPath.toFile();
         optimized.deleteOnExit();
         return optimized;
     }
 
-    private void exec(String[] cmd, String[] env) throws IOException {
-        LOG.info(() -> String.format("running cmd %s (env: %s)", Arrays.toString(cmd), Arrays.toString(env)));
-        Process proc = Runtime.getRuntime().exec(cmd, env);
+    private void exec(String[] cmd) throws IOException {
+        LOG.info(() -> String.format("running cmd %s", Arrays.toString(cmd)));
+        Process proc = Runtime.getRuntime().exec(cmd);
         try {
             int result = proc.waitFor();
             String stdout = new String(proc.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
