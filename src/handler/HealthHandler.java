@@ -7,6 +7,6 @@ import server.LightResponse;
 public record HealthHandler() implements LightHandler {
 	@Override
 	public LightResponse get(HttpExchange exchange) {
-	    return LightResponse.of(200, "OK!%n");
+	    return LightResponse.of(200, "OK!");
 	}
 }

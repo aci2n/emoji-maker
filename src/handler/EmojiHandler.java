@@ -46,7 +46,7 @@ public record EmojiHandler() implements LightHandler {
         exec(tgsToGifCmd);
         File gif = Path.of(tgs.getPath() + ".gif").toFile();
         if (gif.length() < 10) {
-            throw LightException.badRequest(String.format("could not create file %s%n", gif));
+            throw LightException.badRequest(String.format("could not create file %s", gif));
         }
         gif.deleteOnExit();
         LOG.info(() -> String.format("converted to gif: %s (%d bytes)", gif, gif.length()));
@@ -65,7 +65,7 @@ public record EmojiHandler() implements LightHandler {
                 return optimized;
             }
         }
-        throw LightException.badRequest("cannot optimize gif, too chunky%n");
+        throw LightException.badRequest("cannot optimize gif, too chunky");
     }
 
     private File optimizeGif(File gif, int fps) throws IOException {

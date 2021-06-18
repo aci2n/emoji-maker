@@ -40,7 +40,7 @@ public record LightServer(HttpServer httpServer, Executor executor) {
 				case "DELETE" -> handler.delete(exchange);
 				case "PATCH" -> handler.patch(exchange);
 				case "HEAD" -> handler.head(exchange);
-				default -> LightResponse.of(400, "No method%n");
+				default -> LightResponse.of(400, "No method");
 			};
 		} catch (LightException e) {
 			return LightResponse.of(e.getStatusCode(), e);

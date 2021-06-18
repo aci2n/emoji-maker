@@ -33,6 +33,6 @@ public class LightException extends RuntimeException {
     }
 
     public static LightException methodNotAllowed(String method) {
-        return new LightException(405, String.format("%s not allowed for this path%n", method));
+        return new LightException(405, String.format("%s not allowed for this path", method));
     }
 }
