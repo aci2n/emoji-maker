@@ -14,10 +14,10 @@ ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD true
 RUN npm install
 
 WORKDIR /emoji-maker
-COPY ./src ./src
-RUN javac -d out -cp ./src ./src/**/*.java
-RUN mv ./src/resources ./out
+COPY ./src/java ./src/java
+RUN javac -d out -cp ./src/java ./src/java/**/*.java
 RUN rm -rf ./src
+COPY ./src/resources ./out
 
 ENV USE_SANDBOX false
 ENV CHROMIUM_PATH /usr/bin/chromium-browser
