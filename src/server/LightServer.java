@@ -1,13 +1,8 @@
 package server;
 
-import com.sun.net.httpserver.Headers;
-import com.sun.net.httpserver.HttpContext;
-import com.sun.net.httpserver.HttpExchange;
-import com.sun.net.httpserver.HttpHandler;
-import com.sun.net.httpserver.HttpServer;
+import com.sun.net.httpserver.*;
 
 import java.io.IOException;
-import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.Executors;
@@ -16,7 +11,7 @@ import java.util.logging.Logger;
 public record LightServer(HttpServer httpServer) {
 	private static final Logger LOG = Logger.getLogger(LightServer.class.getName());
 	private static final int SHUTDOWN_DELAY_SECONDS = 0;
-	private static final int THREAD_POOL_SIZE = 10;
+	private static final int THREAD_POOL_SIZE = 8;
 
 	public static LightServer create(int port) throws IOException {
 		InetSocketAddress address = new InetSocketAddress("0.0.0.0", port);
