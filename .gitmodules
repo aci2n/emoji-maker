@@ -1,0 +1,3 @@
+[submodule "deps/tgs-to-gif"]
+	path = deps/tgs-to-gif
+	url = https://github.com/ed-asriyan/tgs-to-gif
