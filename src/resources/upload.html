@@ -6,12 +6,12 @@
 
     <script>
         function init() {
-            const form = document.querySelector('#form');
-            form.addEventListener('submit', event => handleUpload(event));
+            document.querySelector('#form').addEventListener('submit', event => handleUpload(event));
         }
 
         function handleUpload(event) {
-            const sticker = event.target.sticker.files[0];
+            const form = event.target;
+            const sticker = form.sticker.files[0];
             const reader = new FileReader();
             reader.addEventListener('loadend', e => {
                 postImage({
