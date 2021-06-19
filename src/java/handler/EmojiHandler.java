@@ -20,12 +20,11 @@ public record EmojiHandler() implements LightHandler {
         try {
             File tgs = writeTgs(exchange.getRequestBody());
             File gif = convertToGif(tgs);
-            File optimized = optimizeGif(gif);
-            long contentLength = optimized.length();
+            long contentLength = gif.length();
             return LightResponse.builder()
                     .statusCode(200)
                     .contentLength(contentLength)
-                    .result(new FileInputStream(optimized))
+                    .result(new FileInputStream(gif))
                     .header("Content-Type", "image/gif")
                     .build();
         } catch (IOException e) {
@@ -42,7 +41,26 @@ public record EmojiHandler() implements LightHandler {
     }
 
     private File convertToGif(File tgs) throws IOException {
-        String[] tgsToGifCmd = new String[]{"node", "./deps/tgs-to-gif/cli.js", tgs.toString()};
+        int fps = 24;
+        while (fps >= 10) {
+            File gif = convertToGif(tgs, fps);
+            if (gif.length() > 256 * 1024) {
+                fps -= 2;
+            } else {
+                return gif;
+            }
+        }
+        throw LightException.badRequest("animation too long, cannot render");
+    }
+
+    private File convertToGif(File tgs, int fps) throws IOException {
+        String[] tgsToGifCmd = new String[]{
+                "node",
+                "deps/renderer/cli.js",
+                "--width", "96",
+                "--height", "96",
+                "--fps", Integer.toString(fps),
+                tgs.toString()};
         exec(tgsToGifCmd);
         File gif = Path.of(tgs.getPath() + ".gif").toFile();
         if (gif.length() < 10) {
@@ -51,40 +69,6 @@ public record EmojiHandler() implements LightHandler {
         gif.deleteOnExit();
         LOG.info(() -> String.format("converted to gif: %s (%d bytes)", gif, gif.length()));
         return gif;
-    }
-
-    private File optimizeGif(File gif) throws IOException {
-        int fps = 24;
-        while (fps >= 10) {
-            int f = fps;
-            LOG.info(() -> String.format("optimizing %s with %d fps", gif, f));
-            File optimized = optimizeGif(gif, fps);
-            if (optimized.length() > 1024 * 256) {
-                fps -= 2;
-            } else {
-                return optimized;
-            }
-        }
-        throw LightException.badRequest("cannot optimize gif, too chunky");
-    }
-
-    private File optimizeGif(File gif, int fps) throws IOException {
-        Path optimizedGifPath = Path.of(gif.getPath() + ".optimized.gif");
-        String[] ffmpegCommand = new String[]{
-                "ffmpeg",
-                "-i",
-                gif.toString(),
-                "-filter_complex",
-                "[0:v] scale=96:-1,fps=" + fps + ":round=zero,split [a][b];" +
-                        "[a] palettegen=reserve_transparent=on:transparency_color=ffffff [p];" +
-                        "[b][p] paletteuse",
-                "-y",
-                optimizedGifPath.toString()
-        };
-        exec(ffmpegCommand);
-        File optimized = optimizedGifPath.toFile();
-        optimized.deleteOnExit();
-        return optimized;
     }
 
     private void exec(String[] cmd) throws IOException {

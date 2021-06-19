@@ -1,3 +1,4 @@
-[submodule "deps/tgs-to-gif"]
-	path = deps/tgs-to-gif
-	url = https://github.com/ed-asriyan/tgs-to-gif
+[submodule "deps/renderer"]
+	path = deps/renderer
+	url = https://github.com/aci2n/tgs-to-gif.git
+	branch = renderer
