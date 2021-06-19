@@ -7,7 +7,8 @@ RUN apk add cargo
 RUN cargo install gifski
 
 WORKDIR /emoji-maker/deps/renderer
-RUN git clone --branch renderer https://github.com/aci2n/tgs-to-gif .
+RUN git clone https://github.com/aci2n/tgs-to-gif .
+RUN git checkout ba45558fca31716b210b190e9ea93c6460a9fa77
 ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD true
 RUN npm install
 

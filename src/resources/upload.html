@@ -6,30 +6,49 @@
 
     <script>
         function init() {
-            const fileInput = document.querySelector('#file');
-            fileInput.addEventListener('change', event => handleUpload(event));
+            const form = document.querySelector('#form');
+            form.addEventListener('submit', event => handleUpload(event));
         }
 
         function handleUpload(event) {
-            const file = event.target.files[0];
+            const sticker = event.target.sticker.files[0];
             const reader = new FileReader();
             reader.addEventListener('loadend', e => {
-                postImage(new Blob([e.target.result], {type: 'application/octet-stream'}));
+                postImage({
+                    size: form.size.value,
+                    fps: form.fps.value,
+                    quality: form.quality.value,
+                    sticker: new Blob([e.target.result], {type: 'application/octet-stream'})
+                });
             });
-            reader.readAsArrayBuffer(file);
+            reader.readAsArrayBuffer(sticker);
+            event.preventDefault();
+            return false;
         }
 
-        function postImage(blob) {
-            const result = document.querySelector('#result');
-            result.textContent = 'Processing...';
+        function postImage(params) {
+            const log = document.querySelector('#log');
+            log.innerHTML = 'Processing...';
             fetch('emoji', {
                 method: 'POST',
-                body: blob
+                headers: {
+                    "GIF-Size": params.size,
+                    "GIF-FPS": params.fps,
+                    "GIF-Quality": params.quality
+                },
+                body: params.sticker
             })
-            .then(response => response.blob())
-            .then(blob => {
-                result.href = URL.createObjectURL(blob);
-                result.textContent = 'Click here to download!';
+            .then(response => {
+                if (response.status >= 200 && response.status < 300) {
+                   response.blob().then(blob => {
+                        const href = URL.createObjectURL(blob);
+                        log.innerHTML = `<a href="${href}" target="_blank">Click here to download!</a>`;
+                    })
+                } else {
+                    response.text().then(text => {
+                        log.innerHTML = `Error (${response.status}): ${text}`;
+                    });
+                }
             });
         }
 
@@ -37,7 +56,14 @@
     </script>
 </head>
 <body>
-    <input id="file" type="file" accept=".tgs"/>
-    <a id="result" target="_gif">Upload a .tgs file</a>
+    <form id="form">
+        <label>Size: <input name="size" type="number" value="96"/></label>
+        <label>FPS: <input name="fps" type="number" value="24"/></label>
+        <label>Quality: <input name="quality" type="number" value="60"/></label>
+        <input name="sticker" type="file" accept=".tgs" required/>
+        <input type="submit" value="Upload"/>
+    </form>
+    <br>
+    <div id="log">Upload a .tgs file</div>
 </body>
 </html>
