@@ -60,6 +60,7 @@ public record EmojiHandler() implements LightHandler {
                 "--width", "96",
                 "--height", "96",
                 "--fps", Integer.toString(fps),
+                "--quality", "60",
                 tgs.toString()};
         exec(tgsToGifCmd);
         File gif = Path.of(tgs.getPath() + ".gif").toFile();
